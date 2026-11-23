@@ -29,6 +29,7 @@ export const site: SiteConfig = {
     { label: "People", href: "/people" },
     { label: "Research", href: "/research" },
     { label: "Publications", href: "/publications" },
+    { label: "Facility", href: "/facility" },
     { label: "Contact", href: "/contact" },
   ],
 };
