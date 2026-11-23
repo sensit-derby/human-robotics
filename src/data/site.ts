@@ -18,7 +18,7 @@ export interface SiteConfig {
 
 export const site: SiteConfig = {
   name: "Human-Centric Robotics",
-  shortName: "HCR",
+  shortName: "HCR Group",
   university: "University of Derby",
   // Your production URL (used for canonical links + sitemap). Set your domain.
   url: "https://sensit-derby.github.io/human-robotics/",
