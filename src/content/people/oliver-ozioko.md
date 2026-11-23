@@ -8,6 +8,7 @@ links:
   website: https://www.derby.ac.uk/staff/oliver-ozioko/
   email: o.ozioko@derby.ac.uk
   scholar: "https://scholar.google.com/citations?user=QMu8ucEAAAAJ&hl=en"
+  orcid: https://orcid.org/0000-0003-0208-5143
 order: 3
 ---
 

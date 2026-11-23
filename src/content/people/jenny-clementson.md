@@ -6,6 +6,7 @@ role: "Senior Project Manager, University of Derby"
 headshot: ../../assets/people/jenny-clementson.jpg
 links:
   website: https://www.derby.ac.uk/staff/jenny-clementson/
+  orcid: https://orcid.org/0000-0002-5987-0209
 order: 5
 ---
 

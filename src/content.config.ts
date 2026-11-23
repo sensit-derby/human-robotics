@@ -50,6 +50,7 @@ const publications = defineCollection({
   schema: z.object({
     title: z.string(),
     authors: z.array(z.string()),
+    members: z.array(reference("people")).optional(),
     year: z.number(),
     journal: z.string().optional(),
     doi: z.string().optional(),
@@ -75,6 +76,8 @@ const publications = defineCollection({
           "robot-sensing",
           "3d-computer-vision",
           "rehabilitation-robotics",
+          "applied-ai",
+          "digital-engineering",
           "methods",
           "theory",
           "review",

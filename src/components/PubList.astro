@@ -3,7 +3,7 @@ import { sitePath } from "../lib/site-path";
 import { getCollection } from "astro:content";
 import { Image } from "astro:assets";
 import type { Publication } from "../lib/content";
-import { authorIsPerson, personKey, menteeMatcher } from "../lib/content";
+import { authorIsPerson, personKey, menteeMatcher, publicationHasMember } from "../lib/content";
 // Author markers: ** = mentee (derived from lab membership, see menteeMatcher)
 // and * = co-first/-senior author (from the CV, scripts/data, by DOI/title).
 import cvPubs from "../../scripts/data/cv-publications.json";
@@ -42,28 +42,13 @@ const starsFor = (p: Publication): Set<string> =>
 // Directory of lab people, for linking author names + mentee headshots.
 const people = await getCollection("people");
 const dir = people.map((p) => ({
+  person: p,
   slug: p.id,
   name: p.data.name,
   headshot: p.data.headshot,
   key: personKey(p.data.name),
 }));
-const findPerson = (author: string) =>
-  dir.find((d) => authorIsPerson(author, d.key)) ?? null;
 const isMentee = menteeMatcher(people);
-
-// Headshots for every lab member on a paper (in the people collection, with a
-// headshot), in author order — including the PI on any paper he co-authored.
-const labPeopleFor = (p: Publication) => {
-  const seen = new Set<string>();
-  const out: typeof dir = [];
-  for (const a of p.data.authors) {
-    const d = findPerson(a);
-    if (!d || !d.headshot || seen.has(d.slug)) continue;
-    seen.add(d.slug);
-    out.push(d);
-  }
-  return out;
-};
 
 const shortName = (name: string) => name.split(",")[0].trim();
 const anyMarks = pubs.some((p) => starsFor(p).size > 0);
@@ -74,11 +59,14 @@ const anyMarks = pubs.some((p) => starsFor(p).size > 0);
     pubs.map((p) => {
       const d = p.data;
       const link = d.doi ? `https://doi.org/${d.doi}` : d.url;
-      const memberNames = d.authors.map((author) => findPerson(author)?.name ?? "");
+      const members = dir.filter(({ person }) => publicationHasMember(p, person));
+      const authorProfiles = d.authors.map((author) => members.find(({ key }) => authorIsPerson(author, key)));
+      const memberNames = members.map(({ name }) => name);
       const search = [d.title, ...d.authors, ...memberNames, d.journal ?? ""].join(" ").toLowerCase();
       const stars = starsFor(p);
       const menteeLed = isMentee(d.authors[0] ?? "");
-      const labPeople = labPeopleFor(p);
+      const labPeople = [...new Set([...authorProfiles, ...members])]
+        .filter((member): member is (typeof dir)[number] => Boolean(member?.headshot));
       return (
         <li
           class="py-5"
@@ -87,6 +75,7 @@ const anyMarks = pubs.some((p) => starsFor(p).size > 0);
           data-citations={typeof d.citations === "number" ? d.citations : -1}
           data-openaccess={d.openAccess}
           data-areas={d.areas.join(" ")}
+          data-members={members.map(({ slug }) => slug).join(" ")}
           data-search={search}
         >
           <p class="font-medium text-slate-900">
@@ -107,7 +96,7 @@ const anyMarks = pubs.some((p) => starsFor(p).size > 0);
           <p class="mt-1 text-sm text-slate-600">
             <span class:list={["authors", d.authors.length > 14 && "clamped"]}>
               {d.authors.map((a, i) => {
-                const person = findPerson(a);
+                const person = authorProfiles[i];
                 // Only a co-first/-senior (*) marker. Mentees are conveyed by
                 // bolded name links + headshots, so they get no marker.
                 const mark = stars.has(a) ? "*" : "";

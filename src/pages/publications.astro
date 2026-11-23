@@ -1,13 +1,17 @@
 ---
+import { getCollection } from "astro:content";
 import BaseLayout from "../components/BaseLayout.astro";
 import PageHeader from "../components/PageHeader.astro";
 import PubList from "../components/PubList.astro";
-import { getPublications, getAreaCounts, AREA_LABELS, FILTER_GROUPS } from "../lib/content";
+import { getPublications, getAreaCounts, AREA_LABELS, FILTER_GROUPS, publicationHasMember } from "../lib/content";
 
 const pubs = await getPublications();
 const areaCounts = await getAreaCounts();
 const areaChips = FILTER_GROUPS.flatMap((g) => g.slugs).filter((slug) => areaCounts[slug]);
 const hasCitationCounts = pubs.some(({ data }) => typeof data.citations === "number");
+const authors = (await getCollection("people"))
+  .filter((person) => pubs.some((pub) => publicationHasMember(pub, person)))
+  .sort((a, b) => a.data.name.localeCompare(b.data.name));
 
 const chip =
   "rounded-full border border-slate-300 px-3 py-1 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 data-[active]:border-primary-600 data-[active]:bg-primary-600 data-[active]:text-white";
@@ -25,7 +29,7 @@ const filters = [
   <PageHeader
     eyebrow="Research output"
     title="Publications"
-    lead="Selected publications by members of the Human-Centric Robotics group."
+    lead="Selected journal articles, conference papers, and other research outputs by HCR members."
   />
   <div class="container-page py-12">
     <div class="mb-8 space-y-3">
@@ -68,6 +72,14 @@ const filters = [
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
+        <label for="pub-author" class="sr-only">Filter by HCR member</label>
+        <select
+          id="pub-author"
+          class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700"
+        >
+          <option value="">All HCR members</option>
+          {authors.map((person) => <option value={person.id}>{person.data.name}</option>)}
+        </select>
         <input
           type="search"
           id="pub-search"
@@ -82,7 +94,7 @@ const filters = [
             <button class={chip} data-sort="citations">Most cited</button>
           </div>
         )}
-        <span id="pub-count" class="text-sm text-slate-600"></span>
+        <span id="pub-count" role="status" class="text-sm text-slate-600"></span>
       </div>
     </div>
 
@@ -99,6 +111,11 @@ const filters = [
       ? ([...list.querySelectorAll<HTMLElement>("[data-pub]")] as HTMLElement[])
       : [];
     const search = document.getElementById("pub-search") as HTMLInputElement | null;
+    const authorSelect = document.querySelector<HTMLSelectElement>("#pub-author");
+    const requestedAuthor = new URLSearchParams(location.search).get("author");
+    if (authorSelect && requestedAuthor && [...authorSelect.options].some(({ value }) => value === requestedAuthor)) {
+      authorSelect.value = requestedAuthor;
+    }
     const countEl = document.getElementById("pub-count");
     const emptyEl = document.getElementById("pub-empty");
     // Mobile: toggle the (collapsed) filter panel.
@@ -142,12 +159,14 @@ const filters = [
 
     function applyFilter() {
       const q = (search?.value ?? "").trim().toLowerCase();
+      const author = authorSelect?.value;
       let n = 0;
       for (const li of items) {
         const okFilter = filter === "all" || li.dataset.openaccess === "true";
         const okArea = area === "all" || (li.dataset.areas ?? "").split(" ").includes(area);
         const okSearch = !q || (li.dataset.search ?? "").includes(q);
-        const show = okFilter && okArea && okSearch;
+        const okAuthor = !author || li.dataset.members?.split(" ").includes(author);
+        const show = okFilter && okArea && okSearch && okAuthor;
         li.hidden = !show;
         if (show) n++;
       }
@@ -181,6 +200,7 @@ const filters = [
         applySort();
       });
     search?.addEventListener("input", applyFilter);
+    authorSelect?.addEventListener("change", applyFilter);
 
     // Deep link: /publications#<area-slug> pre-selects that area filter.
     const hash = decodeURIComponent(location.hash.replace(/^#/, ""));

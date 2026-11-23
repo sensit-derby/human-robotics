@@ -12,6 +12,8 @@ export type AreaSlug =
   | "robot-sensing"
   | "3d-computer-vision"
   | "rehabilitation-robotics"
+  | "applied-ai"
+  | "digital-engineering"
   | "methods"
   | "theory"
   | "review"
@@ -23,6 +25,8 @@ export const AREA_LABELS: Record<AreaSlug, string> = {
   "robot-sensing": "Robot sensing",
   "3d-computer-vision": "3D vision",
   "rehabilitation-robotics": "Rehabilitation robotics",
+  "applied-ai": "Applied AI and machine learning",
+  "digital-engineering": "Digital twins and systems engineering",
   methods: "Methods & open tools",
   theory: "Theory & modeling",
   review: "Review",
@@ -51,6 +55,8 @@ export const RESEARCH_GROUPS: {
     areas: [
       { slug: "methods", blurb: "Reproducible, open tooling and shared resources that make the lab's work possible." },
       { slug: "theory", blurb: "Conceptual and computational frameworks that tie the lab's empirical work together." },
+      { slug: "applied-ai", blurb: "Research on learning from data for engineering, healthcare, and intelligent systems." },
+      { slug: "digital-engineering", blurb: "Research on digital twins, engineering decision support, and the governance of shared digital systems." },
     ],
   },
 ];
@@ -58,7 +64,7 @@ export const RESEARCH_GROUPS: {
 // Publications filter chips, grouped (slugs reference AREA_LABELS).
 export const FILTER_GROUPS: { title: string; slugs: AreaSlug[] }[] = [
   { title: "Topic", slugs: ["human-robot-interaction", "robot-control", "robot-sensing", "3d-computer-vision", "rehabilitation-robotics"] },
-  { title: "Approach", slugs: ["methods", "theory"] },
+  { title: "Approach", slugs: ["applied-ai", "digital-engineering", "methods", "theory"] },
   { title: "Type", slugs: ["review", "letter"] },
 ];
 
@@ -178,10 +184,16 @@ export function authorIsPerson(author: string, pk: PersonKey): boolean {
   return lastOk && initialOk;
 }
 
-/** Publications authored by a person, newest-first (best-effort name match). */
-export function publicationsForPerson(person: Person, pubs: Publication[]) {
+/** Prefer the recorded member IDs for curated publications. */
+export function publicationHasMember(pub: Publication, person: Person): boolean {
+  if (pub.data.members) return pub.data.members.some(({ id }) => id === person.id);
   const pk = personKey(person.data.name);
-  return pubs.filter((p) => p.data.authors.some((a) => authorIsPerson(a, pk)));
+  return pub.data.authors.some((author) => authorIsPerson(author, pk));
+}
+
+/** Publications authored by a person, preserving the input order. */
+export function publicationsForPerson(person: Person, pubs: Publication[]) {
+  return pubs.filter((pub) => publicationHasMember(pub, person));
 }
 
 /** Build an `isMentee(authorString)` predicate from the people collection. */
