@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sensit-derby.github.io/human-robotics/sitemap-index.xml
