@@ -3,6 +3,7 @@ name: "Quang Dan Le"
 status: current
 group: Faculty
 role: "Lecturer in Embedded Systems, University of Derby"
+headshot: ../../assets/people/quang-dan-le.jpg
 links:
   website: https://lequangdan.github.io/danle/
   email: d.le@derby.ac.uk

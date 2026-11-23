@@ -9,7 +9,9 @@ export type Figure = CollectionEntry<"figures">;
 export type AreaSlug =
   | "human-robot-interaction"
   | "robot-control"
+  | "robot-sensing"
   | "3d-computer-vision"
+  | "rehabilitation-robotics"
   | "methods"
   | "theory"
   | "review"
@@ -18,7 +20,9 @@ export type AreaSlug =
 export const AREA_LABELS: Record<AreaSlug, string> = {
   "human-robot-interaction": "Human–robot interaction",
   "robot-control": "Robot control and learning",
-  "3d-computer-vision": "3D computer vision",
+  "robot-sensing": "Robot sensing",
+  "3d-computer-vision": "3D vision",
+  "rehabilitation-robotics": "Rehabilitation robotics",
   methods: "Methods & open tools",
   theory: "Theory & modeling",
   review: "Review",
@@ -26,13 +30,20 @@ export const AREA_LABELS: Record<AreaSlug, string> = {
 };
 
 // Research-page sections, grouped (topics vs. approaches), with blurbs.
-export const RESEARCH_GROUPS: { title: string; areas: { slug: AreaSlug; blurb: string }[] }[] = [
+export const RESEARCH_GROUPS: {
+  title: string;
+  showWithoutPublications?: boolean;
+  areas: { slug: AreaSlug; blurb: string }[];
+}[] = [
   {
     title: "Research topics",
+    showWithoutPublications: true,
     areas: [
       { slug: "human-robot-interaction", blurb: "We study how people can guide and work with robots through haptic feedback, teleoperation, and physical interaction." },
-      { slug: "robot-control", blurb: "We explore force control, fault-tolerant control, and methods that let robots learn tasks from experience or demonstrations." },
+      { slug: "robot-sensing", blurb: "We develop tactile sensors, electronic skin, and sensing systems that help robots perceive their surroundings and interactions." },
       { slug: "3d-computer-vision", blurb: "We develop ways to reconstruct and render 3D scenes from images and video, including methods for novel view synthesis and volumetric video." },
+      { slug: "rehabilitation-robotics", blurb: "We study assistive devices and robotic rehabilitation, including how muscle signals can help systems respond to a person's intended movement." },
+      { slug: "robot-control", blurb: "We explore force control, fault-tolerant control, and methods that let robots learn tasks from experience or demonstrations." },
     ],
   },
   {
@@ -46,7 +57,7 @@ export const RESEARCH_GROUPS: { title: string; areas: { slug: AreaSlug; blurb: s
 
 // Publications filter chips, grouped (slugs reference AREA_LABELS).
 export const FILTER_GROUPS: { title: string; slugs: AreaSlug[] }[] = [
-  { title: "Topic", slugs: ["human-robot-interaction", "robot-control", "3d-computer-vision"] },
+  { title: "Topic", slugs: ["human-robot-interaction", "robot-control", "robot-sensing", "3d-computer-vision", "rehabilitation-robotics"] },
   { title: "Approach", slugs: ["methods", "theory"] },
   { title: "Type", slugs: ["review", "letter"] },
 ];
@@ -61,7 +72,7 @@ export async function getResearchGroups(limit = 4) {
         const all = pubs.filter((p) => p.data.areas.includes(a.slug));
         return { slug: a.slug, label: AREA_LABELS[a.slug], blurb: a.blurb, pubs: all.slice(0, limit), total: all.length };
       })
-      .filter((a) => a.total > 0),
+      .filter((a) => g.showWithoutPublications || a.total > 0),
   })).filter((g) => g.areas.length > 0);
 }
 

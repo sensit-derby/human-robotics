@@ -3,6 +3,7 @@ name: "Oliver Ozioko"
 status: current
 group: Faculty
 role: "Lecturer in Electrical and Electronic Engineering, University of Derby"
+headshot: ../../assets/people/oliver-ozioko.jpg
 links:
   website: https://www.derby.ac.uk/staff/oliver-ozioko/
   email: o.ozioko@derby.ac.uk

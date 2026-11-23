@@ -3,6 +3,7 @@ name: "Minye Wu"
 status: current
 group: Faculty
 role: "Lecturer, University of Derby"
+headshot: ../../assets/people/minye-wu.jpg
 links:
   website: https://wuminye.github.io/
   scholar: https://scholar.google.com/citations?user=aUAnceQAAAAJ

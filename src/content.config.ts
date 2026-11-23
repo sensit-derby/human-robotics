@@ -72,7 +72,9 @@ const publications = defineCollection({
         z.enum([
           "human-robot-interaction",
           "robot-control",
+          "robot-sensing",
           "3d-computer-vision",
+          "rehabilitation-robotics",
           "methods",
           "theory",
           "review",
