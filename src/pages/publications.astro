@@ -6,28 +6,26 @@ import { getPublications, getAreaCounts, AREA_LABELS, FILTER_GROUPS } from "../l
 
 const pubs = await getPublications();
 const areaCounts = await getAreaCounts();
-const areaChips = FILTER_GROUPS.flatMap((g) => g.slugs);
+const areaChips = FILTER_GROUPS.flatMap((g) => g.slugs).filter((slug) => areaCounts[slug]);
+const hasCitationCounts = pubs.some(({ data }) => typeof data.citations === "number");
 
 const chip =
   "rounded-full border border-slate-300 px-3 py-1 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 data-[active]:border-primary-600 data-[active]:bg-primary-600 data-[active]:text-white";
 
 const filters = [
   { key: "all", label: "All" },
-  { key: "mentee", label: "Mentee-led" },
-  { key: "pi", label: "PI first/senior" },
-  { key: "collaboration", label: "Collaboration" },
   { key: "openaccess", label: "Open access" },
 ];
 ---
 
 <BaseLayout
   title="Publications"
-  description="Peer-reviewed publications from the lab. Filter by role or research area, sort by date or citations."
+  description="Selected publications by members of the Human-Centric Robotics group."
 >
   <PageHeader
     eyebrow="Research output"
     title="Publications"
-    lead="Peer-reviewed work from the lab and its collaborators. Filter by role or by research area, sort by date or citation count; counts are from Google Scholar."
+    lead="Selected publications by members of the Human-Centric Robotics group."
   />
   <div class="container-page py-12">
     <div class="mb-8 space-y-3">
@@ -57,15 +55,15 @@ const filters = [
 
         <div class="flex flex-wrap items-center gap-2">
           <span class="mr-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">Area</span>
-        <button class={chip} data-area="all" data-active>All areas</button>
-        {
-          areaChips.map((slug) => (
-            <button class={chip} data-area={slug}>
-              {AREA_LABELS[slug]}{" "}
-              <span class="opacity-70">({areaCounts[slug] ?? 0})</span>
-            </button>
-          ))
-        }
+          <button class={chip} data-area="all" data-active>All areas</button>
+          {
+            areaChips.map((slug) => (
+              <button class={chip} data-area={slug}>
+                {AREA_LABELS[slug]}{" "}
+                <span class="opacity-70">({areaCounts[slug]})</span>
+              </button>
+            ))
+          }
         </div>
       </div>
 
@@ -73,14 +71,17 @@ const filters = [
         <input
           type="search"
           id="pub-search"
+          aria-label="Search publications by title or author"
           placeholder="Search title or author…"
           class="min-w-56 flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-primary-500 focus:outline-none"
         />
-        <div class="flex items-center gap-2 text-sm text-slate-600">
-          <span>Sort</span>
-          <button class={chip} data-sort="date" data-active>Newest</button>
-          <button class={chip} data-sort="citations">Most cited</button>
-        </div>
+        {hasCitationCounts && (
+          <div class="flex items-center gap-2 text-sm text-slate-600">
+            <span>Sort</span>
+            <button class={chip} data-sort="date" data-active>Newest</button>
+            <button class={chip} data-sort="citations">Most cited</button>
+          </div>
+        )}
         <span id="pub-count" class="text-sm text-slate-600"></span>
       </div>
     </div>
@@ -113,13 +114,6 @@ const filters = [
     const areaBtns = [...document.querySelectorAll<HTMLElement>("[data-area]")];
     const sortBtns = [...document.querySelectorAll<HTMLElement>("[data-sort]")];
 
-    // role filter key -> the li dataset flag it tests ("all" tests nothing)
-    const FLAG: Record<string, string> = {
-      mentee: "mentee",
-      pi: "piSenior",
-      collaboration: "collaboration",
-      openaccess: "openaccess",
-    };
     let filter = "all";
     let area = "all";
     let sort = "date";
@@ -130,7 +124,7 @@ const filters = [
       for (const b of filterBtns) {
         const f = b.dataset.filter!;
         const c =
-          f === "all" ? items.length : items.filter((li) => li.dataset[FLAG[f]] === "true").length;
+          f === "all" ? items.length : items.filter((li) => li.dataset.openaccess === "true").length;
         const span = b.querySelector("[data-count]");
         if (span) span.textContent = `(${c})`;
       }
@@ -150,7 +144,7 @@ const filters = [
       const q = (search?.value ?? "").trim().toLowerCase();
       let n = 0;
       for (const li of items) {
-        const okFilter = filter === "all" || li.dataset[FLAG[filter]] === "true";
+        const okFilter = filter === "all" || li.dataset.openaccess === "true";
         const okArea = area === "all" || (li.dataset.areas ?? "").split(" ").includes(area);
         const okSearch = !q || (li.dataset.search ?? "").includes(q);
         const show = okFilter && okArea && okSearch;

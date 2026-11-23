@@ -4,25 +4,16 @@ import { Image } from "astro:assets";
 import BaseLayout from "../components/BaseLayout.astro";
 import { site } from "../data/site";
 import { getCollection } from "astro:content";
-import {
-  getConfirmedFigures,
-  getPublications,
-  featuredMatcher,
-  featuredSorter,
-} from "../lib/content";
+import { AREA_LABELS, getConfirmedFigures, getPublications, RESEARCH_GROUPS } from "../lib/content";
+import PersonCard from "../components/PersonCard.astro";
 import PubList from "../components/PubList.astro";
-import labPhoto from "../assets/gallery/sample-1.jpg";
 
 const figures = await getConfirmedFigures();
-
-const people = await getCollection("people");
+const people = (await getCollection("people", ({ data }) => data.status === "current"))
+  .sort((a, b) => a.data.order - b.data.order);
 const pubs = await getPublications();
-// Featured = mentee-led or PI first/senior (>=2019), prioritized mentee-led
-// first then most recent.
-const recent = pubs
-  .filter(featuredMatcher(people))
-  .sort(featuredSorter(people))
-  .slice(0, 5);
+const recent = pubs.slice(0, 3);
+const themes = RESEARCH_GROUPS[0].areas;
 
 // "From our work" strip: the most-prominent (lowest-order) figure from each of
 // the top three papers, so the strip showcases range rather than repeating one
@@ -42,31 +33,6 @@ for (const f of figures) {
   if (strip.length === 3) break;
 }
 
-// Homepage "Research areas" cards. Replace these with your lab's themes; each
-// `href` can deep-link into the Research page's grouped sections (e.g.
-// "/research#your-slug" once you set up the taxonomy in content.config.ts).
-const themes = [
-  {
-    title: "Research area one",
-    href: "/research",
-    body: "A sentence describing this line of work and the questions it asks.",
-  },
-  {
-    title: "Research area two",
-    href: "/research",
-    body: "A sentence describing this line of work and the questions it asks.",
-  },
-  {
-    title: "Research area three",
-    href: "/research",
-    body: "A sentence describing this line of work and the questions it asks.",
-  },
-  {
-    title: "Methods & open tools",
-    href: "/research",
-    body: "Shared resources, datasets, and reproducible pipelines from the lab.",
-  },
-];
 ---
 
 <BaseLayout>
@@ -75,12 +41,12 @@ const themes = [
     <div class="container-page py-16 sm:py-20">
       <div class="mx-auto max-w-3xl text-center">
         <p class="text-sm font-semibold tracking-wide text-accent-600 uppercase">
-          {site.institution} · {site.university}
+          {site.university}
         </p>
         <h1
           class="mt-4 text-4xl leading-tight font-semibold text-slate-900 sm:text-5xl"
         >
-          {site.name}
+          {site.name} ({site.shortName})
         </h1>
         <p class="mx-auto mt-6 max-w-2xl text-lg text-slate-600">{site.description}</p>
         <div class="mt-8 flex flex-wrap justify-center gap-3">
@@ -96,9 +62,6 @@ const themes = [
           >
         </div>
       </div>
-      {/* Want a custom illustrated hero? src/components/PipelineHero.astro is a
-          worked example (the Cohen Lab's bedside-to-bedside pipeline). Drop it in
-          here, or ask Claude to generate an SVG hero motif for your own field. */}
     </div>
   </section>
 
@@ -164,17 +127,17 @@ const themes = [
   <section class="container-page py-16">
     <div class="mb-3 h-0.5 w-10 rounded-full bg-accent-500"></div>
     <h2 class="mb-8 font-serif text-2xl text-slate-900">Research areas</h2>
-    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {
-        themes.map((t) => (
+        themes.map((theme) => (
           <a
-            href={sitePath(t.href)}
+            href={sitePath("/research#" + theme.slug)}
             class="group rounded-xl border border-slate-200 p-6 transition-colors hover:border-primary-300 hover:bg-primary-50/40"
           >
             <h3 class="font-serif text-xl text-slate-900 group-hover:text-primary-700">
-              {t.title}
+              {AREA_LABELS[theme.slug]}
             </h3>
-            <p class="mt-2 text-sm text-slate-600">{t.body}</p>
+            <p class="mt-2 text-sm text-slate-600">{theme.blurb}</p>
           </a>
         ))
       }
@@ -189,7 +152,7 @@ const themes = [
           <div class="mb-6 flex items-end justify-between gap-4">
             <div>
               <div class="mb-3 h-0.5 w-10 rounded-full bg-accent-500" />
-              <h2 class="font-serif text-2xl text-slate-900">Recent work</h2>
+              <h2 class="font-serif text-2xl text-slate-900">Selected publications</h2>
             </div>
             <a
               href={sitePath("/publications")}
@@ -210,42 +173,11 @@ const themes = [
     )
   }
 
-  <!-- Life in the lab -->
-  <section class="border-t border-slate-200 bg-white">
-    <div class="container-page py-16">
-      <div class="grid items-center gap-10 lg:grid-cols-2">
-        <div>
-          <div class="mb-3 h-0.5 w-10 rounded-full bg-accent-500"></div>
-          <h2 class="font-serif text-2xl text-slate-900">Life in the lab</h2>
-          <p class="mt-4 max-w-prose text-slate-600">
-            Science is a team sport. Beyond the bench, we celebrate milestones,
-            travel to conferences, and get out together. Add your own photos in
-            <code>src/content/gallery/</code>.
-          </p>
-          <a
-            href={sitePath("/lab-life")}
-            class="group mt-6 inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition-colors hover:text-accent-600"
-          >
-            Explore lab life
-            <span
-              class="transition-transform group-hover:translate-x-0.5"
-              aria-hidden="true">&rarr;</span
-            >
-          </a>
-        </div>
-        <a
-          href={sitePath("/lab-life")}
-          class="group block overflow-hidden rounded-2xl border border-slate-200 shadow-sm"
-        >
-          <Image
-            src={labPhoto}
-            alt="Lab team photo"
-            widths={[600, 1000]}
-            sizes="(min-width: 1024px) 45vw, 90vw"
-            class="aspect-[16/9] w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-          />
-        </a>
-      </div>
+  <section class="container-page py-16">
+    <div class="mb-3 h-0.5 w-10 rounded-full bg-accent-500"></div>
+    <h2 class="mb-8 font-serif text-2xl text-slate-900">Our team</h2>
+    <div class="grid max-w-xl grid-cols-2 gap-6 sm:gap-10">
+      {people.map((person) => <PersonCard person={person} />)}
     </div>
   </section>
 </BaseLayout>

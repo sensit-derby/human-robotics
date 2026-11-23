@@ -74,28 +74,17 @@ const anyMarks = pubs.some((p) => starsFor(p).size > 0);
     pubs.map((p) => {
       const d = p.data;
       const link = d.doi ? `https://doi.org/${d.doi}` : d.url;
-      const search = `${d.title} ${d.authors.join(" ")} ${d.journal ?? ""}`.toLowerCase();
+      const memberNames = d.authors.map((author) => findPerson(author)?.name ?? "");
+      const search = [d.title, ...d.authors, ...memberNames, d.journal ?? ""].join(" ").toLowerCase();
       const stars = starsFor(p);
       const menteeLed = isMentee(d.authors[0] ?? "");
-      const featured = menteeLed || (d.piFirstOrSenior && d.year >= 2019);
       const labPeople = labPeopleFor(p);
-      // Collaboration unless the PI is the SOLE first or SOLE last author —
-      // co-first / co-last (he shares the lead) and middle authorship all count.
-      const piAt = (a: string) => findPerson(a)?.slug === "jane-doe";
-      const piStar = d.authors.some((a) => piAt(a) && stars.has(a));
-      const soleFirst = piAt(d.authors[0] ?? "") && !piStar;
-      const soleLast = piAt(d.authors[d.authors.length - 1] ?? "") && !piStar;
-      const collaboration = !soleFirst && !soleLast;
       return (
         <li
           class="py-5"
           data-pub
           data-year={d.year}
           data-citations={typeof d.citations === "number" ? d.citations : -1}
-          data-featured={featured}
-          data-mentee={menteeLed}
-          data-pi-senior={d.piFirstOrSenior}
-          data-collaboration={collaboration}
           data-openaccess={d.openAccess}
           data-areas={d.areas.join(" ")}
           data-search={search}
@@ -197,11 +186,6 @@ const anyMarks = pubs.some((p) => starsFor(p).size > 0);
             {d.piFirstOrSenior && (
               <span class="rounded-full bg-primary-100 px-2 py-0.5 font-medium text-primary-700">
                 PI first/senior
-              </span>
-            )}
-            {collaboration && (
-              <span class="rounded-full bg-slate-200 px-2 py-0.5 font-medium text-slate-600">
-                Collaboration
               </span>
             )}
             {d.openAccess && (

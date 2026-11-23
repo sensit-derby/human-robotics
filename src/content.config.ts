@@ -67,13 +67,12 @@ const publications = defineCollection({
     // Research tags — topic/population AREAS (drive the Research page) plus
     // cross-cutting facets. One field; a paper may carry several. The vocabulary
     // is mirrored in src/lib/content.ts — keep the two in sync when you edit it.
-    // ⚙️  CUSTOMIZE: replace these example slugs with your field's topics.
     areas: z
       .array(
         z.enum([
-          "topic-one",
-          "topic-two",
-          "topic-three",
+          "human-robot-interaction",
+          "robot-control",
+          "3d-computer-vision",
           "methods",
           "theory",
           "review",

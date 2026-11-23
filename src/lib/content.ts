@@ -6,23 +6,19 @@ export type Figure = CollectionEntry<"figures">;
 
 // Tag vocabulary (must match the `areas` enum in content.config.ts). A paper may
 // carry several — a topic/population, a method/approach, and a publication type.
-//
-// ⚙️  CUSTOMIZE: these are EXAMPLE tags. Replace the slugs/labels/blurbs below
-//    (and the matching enum in content.config.ts) with your field's topics.
-//    Keep `review`/`letter` if you want those publication-type facets.
 export type AreaSlug =
-  | "topic-one"
-  | "topic-two"
-  | "topic-three"
+  | "human-robot-interaction"
+  | "robot-control"
+  | "3d-computer-vision"
   | "methods"
   | "theory"
   | "review"
   | "letter";
 
 export const AREA_LABELS: Record<AreaSlug, string> = {
-  "topic-one": "Research topic one",
-  "topic-two": "Research topic two",
-  "topic-three": "Research topic three",
+  "human-robot-interaction": "Human–robot interaction",
+  "robot-control": "Robot control and learning",
+  "3d-computer-vision": "3D computer vision",
   methods: "Methods & open tools",
   theory: "Theory & modeling",
   review: "Review",
@@ -34,9 +30,9 @@ export const RESEARCH_GROUPS: { title: string; areas: { slug: AreaSlug; blurb: s
   {
     title: "Research topics",
     areas: [
-      { slug: "topic-one", blurb: "A sentence describing this line of work and the questions it asks." },
-      { slug: "topic-two", blurb: "A sentence describing this line of work and the questions it asks." },
-      { slug: "topic-three", blurb: "A sentence describing this line of work and the questions it asks." },
+      { slug: "human-robot-interaction", blurb: "We study how people can guide and work with robots through haptic feedback, teleoperation, and physical interaction." },
+      { slug: "robot-control", blurb: "We explore force control, fault-tolerant control, and methods that let robots learn tasks from experience or demonstrations." },
+      { slug: "3d-computer-vision", blurb: "We develop ways to reconstruct and render 3D scenes from images and video, including methods for novel view synthesis and volumetric video." },
     ],
   },
   {
@@ -50,7 +46,7 @@ export const RESEARCH_GROUPS: { title: string; areas: { slug: AreaSlug; blurb: s
 
 // Publications filter chips, grouped (slugs reference AREA_LABELS).
 export const FILTER_GROUPS: { title: string; slugs: AreaSlug[] }[] = [
-  { title: "Topic", slugs: ["topic-one", "topic-two", "topic-three"] },
+  { title: "Topic", slugs: ["human-robot-interaction", "robot-control", "3d-computer-vision"] },
   { title: "Approach", slugs: ["methods", "theory"] },
   { title: "Type", slugs: ["review", "letter"] },
 ];
@@ -177,42 +173,10 @@ export function publicationsForPerson(person: Person, pubs: Publication[]) {
   return pubs.filter((p) => p.data.authors.some((a) => authorIsPerson(a, pk)));
 }
 
-// Everyone profiled is treated as a "mentee" for the publication badges EXCEPT
-// the people listed here (typically the PI and senior faculty/collaborators).
-// Use each person's slug = their markdown filename without ".md".
-// ⚙️  CUSTOMIZE: list your PI (and any senior faculty) here.
-export const NON_MENTEE_SLUGS = new Set(["jane-doe"]);
-
 /** Build an `isMentee(authorString)` predicate from the people collection. */
 export function menteeMatcher(people: Person[]) {
-  const dir = people.map((p) => ({ slug: p.id, key: personKey(p.data.name) }));
-  return (author: string) => {
-    const d = dir.find((x) => authorIsPerson(author, x.key));
-    return !!d && !NON_MENTEE_SLUGS.has(d.slug);
-  };
-}
-
-const menteeLed = (p: Publication, isMentee: (a: string) => boolean) =>
-  isMentee(p.data.authors[0] ?? "");
-
-/**
- * Featured predicate: a mentee-led paper, or a PI first/senior paper from
- * 2019 on. Mentee status is membership-derived (see menteeMatcher).
- */
-export function featuredMatcher(people: Person[]) {
-  const isMentee = menteeMatcher(people);
-  return (p: Publication) => {
-    // Letters and reviews aren't "featured" primary research on the homepage.
-    if (p.data.areas.includes("letter") || p.data.areas.includes("review")) return false;
-    return menteeLed(p, isMentee) || (p.data.piFirstOrSenior && p.data.year >= 2019);
-  };
-}
-
-/** Sort featured papers: mentee-led first, then most recent. */
-export function featuredSorter(people: Person[]) {
-  const isMentee = menteeMatcher(people);
-  return (a: Publication, b: Publication) => {
-    const diff = Number(menteeLed(b, isMentee)) - Number(menteeLed(a, isMentee));
-    return diff || b.data.year - a.data.year;
-  };
+  const students = people
+    .filter((person) => person.data.group === "Students")
+    .map((person) => personKey(person.data.name));
+  return (author: string) => students.some((student) => authorIsPerson(author, student));
 }
